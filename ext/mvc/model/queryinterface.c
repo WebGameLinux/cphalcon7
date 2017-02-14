@@ -51,6 +51,7 @@ PHALCON_DOC_METHOD(Phalcon_Mvc_Model_QueryInterface, parse);
  *
  * @param array $bindParams
  * @param array $bindTypes
+ * @param boolean $uniqueRow
  * @return mixed
  */
 PHALCON_DOC_METHOD(Phalcon_Mvc_Model_QueryInterface, execute);

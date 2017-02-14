@@ -27,9 +27,9 @@ extern zend_class_entry *phalcon_mvc_model_queryinterface_ce;
 PHALCON_INIT_CLASS(Phalcon_Mvc_Model_QueryInterface);
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_phalcon_mvc_model_queryinterface_execute, 0, 0, 0)
-	ZEND_ARG_INFO(0, bindParams)
-	ZEND_ARG_INFO(0, bindTypes)
-	ZEND_ARG_INFO(0, useRawsql)
+	ZEND_ARG_TYPE_INFO(0, bindParams, IS_ARRAY, 1)
+	ZEND_ARG_TYPE_INFO(0, bindTypes, IS_ARRAY, 1)
+	ZEND_ARG_TYPE_INFO(0, uniqueRow, _IS_BOOL, 1)
 ZEND_END_ARG_INFO()
 
 #endif /* PHALCON_MVC_MODEL_QUERYINTERFACE_H */

@@ -2132,10 +2132,8 @@ PHP_METHOD(Phalcon_Mvc_Model, _exists){
 	PHALCON_CALL_METHOD(&models_manager, getThis(), "getmodelsmanager");
 	PHALCON_CALL_METHOD(&query, &models_manager, "createquery", &phql);
 	PHALCON_CALL_METHOD(NULL, &query, "setuniquerow", &PHALCON_GLOBAL(z_true));
-	PHALCON_CALL_METHOD(NULL, &query, "setbindparams", &unique_params);
-	PHALCON_CALL_METHOD(NULL, &query, "setbindtypes", &unique_types);
 
-	PHALCON_CALL_METHOD(&model, &query, "execute");
+	PHALCON_CALL_METHOD(&model, &query, "execute", &unique_params, &unique_types);
 
 	if (Z_TYPE(model) == IS_OBJECT) {
 		phalcon_update_property_long(getThis(), SL("_dirtyState"), PHALCON_MODEL_DIRTY_STATE_PERSISTEN);
@@ -6383,8 +6381,8 @@ PHP_METHOD(Phalcon_Mvc_Model, setup){
  */
 PHP_METHOD(Phalcon_Mvc_Model, remove){
 
-	zval *parameters = NULL, dependency_injector = {}, service_name = {}, model_name = {}, manager = {}, model = {}, write_connection = {}, schema = {}, source = {}, delete_conditions = {};
-	zval bind_params = {}, bind_types = {}, query = {}, phql = {}, intermediate = {}, dialect = {}, table_conditions = {}, where_conditions = {}, where_expression = {}, success = {};
+	zval *parameters, dependency_injector = {}, service_name = {}, model_name = {}, manager = {}, delete_conditions = {};
+	zval bind_params = {}, bind_types = {}, phql = {}, status = {}, success = {};
 
 	phalcon_fetch_params(0, 1, 0, &parameters);
 
@@ -6403,13 +6401,6 @@ PHP_METHOD(Phalcon_Mvc_Model, remove){
 	PHALCON_STR(&service_name, ISV(modelsManager));
 
 	PHALCON_CALL_METHOD(&manager, &dependency_injector, "getshared", &service_name);
-	PHALCON_CALL_METHOD(&model, &manager, "load", &model_name);
-	PHALCON_CALL_METHOD(&schema, &model, "getschema");
-	PHALCON_CALL_METHOD(&source, &model, "getsource");
-
-	array_init_size(&table_conditions, 2);
-	phalcon_array_append(&table_conditions, &schema, PH_COPY);
-	phalcon_array_append(&table_conditions, &source, PH_COPY);
 
 	if (Z_TYPE_P(parameters) == IS_STRING) {
 		PHALCON_CPY_WRT_CTOR(&delete_conditions, parameters);
@@ -6443,24 +6434,12 @@ PHP_METHOD(Phalcon_Mvc_Model, remove){
 		PHALCON_CONCAT_SV(&phql, "DELETE FROM ", &model_name);
 	}
 
-	PHALCON_CALL_METHOD(&query, &manager, "createquery", &phql);
+	PHALCON_CALL_METHOD(&status, &manager, "executeQuery", &phql, &bind_params, &bind_types);
 
-	PHALCON_CALL_METHOD(&intermediate, &query, "parse");
-	PHALCON_CALL_METHOD(&write_connection, getThis(), "getwriteconnection", &intermediate, &bind_params, &bind_types);
-	PHALCON_CALL_METHOD(&dialect, &write_connection, "getdialect");
-
-	if (phalcon_array_isset_fetch_str(&where_conditions, &intermediate, SL("where"))) {
-		if (Z_TYPE(where_conditions) == IS_ARRAY) {
-			PHALCON_CALL_METHOD(&where_expression, &dialect, "getsqlexpression", &where_conditions);
-		} else {
-			PHALCON_CPY_WRT(&where_expression, &where_conditions);
-		}
-	}
-
-	PHALCON_CALL_METHOD(&success, &write_connection, "delete", &table_conditions, &where_expression, &bind_params, &bind_types);
-
-	if (PHALCON_IS_TRUE(&success)) {
-		PHALCON_CALL_METHOD(&success, &write_connection, "affectedRows");
+	if (Z_TYPE(status) == IS_OBJECT) {
+		PHALCON_CALL_METHOD(&success, &status, "success");
+	} else {
+		RETURN_FALSE;
 	}
 
 	if (zend_is_true(&success)) {

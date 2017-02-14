@@ -4068,18 +4068,19 @@ PHP_METHOD(Phalcon_Mvc_Model_Query, _executeDelete){
  *
  * @param array $bindParams
  * @param array $bindTypes
+ * @param boolean $uniqueRow
  * @return mixed
  */
 PHP_METHOD(Phalcon_Mvc_Model_Query, execute){
 
-	zval *bind_params = NULL, *bind_types = NULL, event_name = {}, unique_row = {}, intermediate = {}, type = {};
+	zval *bind_params = NULL, *bind_types = NULL, *_unique_row = NULL, event_name = {}, unique_row = {}, intermediate = {}, type = {};
 	zval cache_options = {}, cache_key = {}, lifetime = {}, cache_service = {}, dependency_injector = {}, cache = {}, frontend = {}, result = {}, is_fresh = {};
 	zval prepared_result = {}, default_bind_params = {}, merged_params = {}, default_bind_types = {}, merged_types = {}, exception_message = {}, *value;
 	zend_string *str_key;
 	ulong idx;
 	int cache_options_is_not_null;
 
-	phalcon_fetch_params(0, 0, 2, &bind_params, &bind_types);
+	phalcon_fetch_params(0, 0, 3, &bind_params, &bind_types, &_unique_row);
 
 	if (!bind_params) {
 		bind_params = &PHALCON_GLOBAL(z_null);
@@ -4095,7 +4096,6 @@ PHP_METHOD(Phalcon_Mvc_Model_Query, execute){
 	phalcon_read_property(&cache_options, getThis(), SL("_cacheOptions"), PH_NOISY);
 	cache_options_is_not_null = (Z_TYPE(cache_options) != IS_NULL); /* to keep scan-build happy */
 
-	phalcon_read_property(&unique_row, getThis(), SL("_uniqueRow"), PH_NOISY);
 
 	/**
 	 * The statement is parsed from its PHQL string or a previously processed IR
@@ -4104,7 +4104,12 @@ PHP_METHOD(Phalcon_Mvc_Model_Query, execute){
 
 	phalcon_read_property(&type, getThis(), SL("_type"), PH_NOISY);
 
-	if (phalcon_get_intval(&type) == PHQL_T_SELECT) {
+	if (Z_LVAL(type) == PHQL_T_SELECT) {
+		if (!_unique_row || !PHALCON_IS_BOOL(_unique_row)) {
+			phalcon_read_property(&unique_row, getThis(), SL("_uniqueRow"), PH_NOISY);
+		} else {
+			PHALCON_CPY_WRT(&unique_row, _unique_row);
+		}
 		if (cache_options_is_not_null) {
 			if (Z_TYPE(cache_options) != IS_ARRAY) {
 				PHALCON_THROW_EXCEPTION_STR(phalcon_mvc_model_query_exception_ce, "Invalid caching options");
@@ -4280,9 +4285,11 @@ PHP_METHOD(Phalcon_Mvc_Model_Query, execute){
 	/**
 	 * Check if only the first row must be returned
 	 */
-	if (zend_is_true(&unique_row)) {
-		PHALCON_CALL_METHOD(return_value, &result, "getfirst");
-		return;
+	if (Z_LVAL(type) == PHQL_T_SELECT) {
+		if (zend_is_true(&unique_row)) {
+			PHALCON_CALL_METHOD(return_value, &result, "getfirst");
+			return;
+		}
 	}
 
 	RETURN_CTOR(&result);
@@ -4297,7 +4304,7 @@ PHP_METHOD(Phalcon_Mvc_Model_Query, execute){
  */
 PHP_METHOD(Phalcon_Mvc_Model_Query, getSingleResult){
 
-	zval *bind_params = NULL, *bind_types = NULL, unique_row = {}, first_result = {}, result = {};
+	zval *bind_params = NULL, *bind_types = NULL;
 
 	phalcon_fetch_params(0, 0, 2, &bind_params, &bind_types);
 
@@ -4309,19 +4316,10 @@ PHP_METHOD(Phalcon_Mvc_Model_Query, getSingleResult){
 		bind_types = &PHALCON_GLOBAL(z_null);
 	}
 
-	phalcon_read_property(&unique_row, getThis(), SL("_uniqueRow"), PH_NOISY);
-
 	/**
 	 * The query is already programmed to return just one row
 	 */
-	PHALCON_CALL_METHOD(&result, getThis(), "execute", bind_params, bind_types);
-
-	if (zend_is_true(&unique_row)) {
-		RETURN_CTOR(&result);
-	} else {
-		PHALCON_CALL_METHOD(&first_result, &result, "getfirst");
-		RETURN_CTOR(&first_result);
-	}
+	PHALCON_CALL_METHOD(return_value, getThis(), "execute", bind_params, bind_types, &PHALCON_GLOBAL(z_true));
 }
 
 /**
