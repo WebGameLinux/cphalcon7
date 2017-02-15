@@ -67,9 +67,9 @@ PHP_METHOD(Phalcon_Db_Adapter_Pdo_Sqlite, unescapeArray);
 
 static const zend_function_entry phalcon_db_adapter_pdo_sqlite_method_entry[] = {
 	PHP_ME(Phalcon_Db_Adapter_Pdo_Sqlite, connect, arginfo_phalcon_db_adapterinterface_connect, ZEND_ACC_PUBLIC)
-	PHP_ME(Phalcon_Db_Adapter_Pdo_Sqlite, describeColumns, arginfo_phalcon_db_adapterinterface_describecolumns, ZEND_ACC_PUBLIC)
-	PHP_ME(Phalcon_Db_Adapter_Pdo_Sqlite, describeIndexes, arginfo_phalcon_db_adapterinterface_describeindexes, ZEND_ACC_PUBLIC)
-	PHP_ME(Phalcon_Db_Adapter_Pdo_Sqlite, describeReferences, arginfo_phalcon_db_adapterinterface_describereferences, ZEND_ACC_PUBLIC)
+	PHP_ME(Phalcon_Db_Adapter_Pdo_Sqlite, describeColumns, arginfo_phalcon_db_adapter_pdo_describecolumns, ZEND_ACC_PUBLIC)
+	PHP_ME(Phalcon_Db_Adapter_Pdo_Sqlite, describeIndexes, arginfo_phalcon_db_adapter_pdo_describeindexes, ZEND_ACC_PUBLIC)
+	PHP_ME(Phalcon_Db_Adapter_Pdo_Sqlite, describeReferences, arginfo_phalcon_db_adapter_pdo_describereferences, ZEND_ACC_PUBLIC)
 	PHP_ME(Phalcon_Db_Adapter_Pdo_Sqlite, useExplicitIdValue, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(Phalcon_Db_Adapter_Pdo_Sqlite, escapeBytea, arginfo_phalcon_db_adapterinterface_escapebytea, ZEND_ACC_PUBLIC)
 	PHP_ME(Phalcon_Db_Adapter_Pdo_Sqlite, unescapeBytea, arginfo_phalcon_db_adapterinterface_unescapebytea, ZEND_ACC_PUBLIC)
@@ -152,7 +152,7 @@ PHP_METHOD(Phalcon_Db_Adapter_Pdo_Sqlite, describeColumns){
 
 	PHALCON_CALL_METHOD(&sql, &dialect, "describecolumns", table, schema);
 
-	/** 
+	/**
 	 * We're using FETCH_NUM to fetch the columns
 	 */
 	ZVAL_LONG(&fetch_num, PDO_FETCH_NUM);
@@ -185,7 +185,7 @@ PHP_METHOD(Phalcon_Db_Adapter_Pdo_Sqlite, describeColumns){
 			}
 		}
 
-		/** 
+		/**
 		 * Check the column type to get the correct Phalcon type
 		 */
 		while (1) {
@@ -396,7 +396,7 @@ PHP_METHOD(Phalcon_Db_Adapter_Pdo_Sqlite, describeColumns){
 			phalcon_array_update_str(&definition, SL("after"), &old_column, PH_COPY);
 		}
 
-		/** 
+		/**
 		 * Check if the field is primary key
 		 */
 		phalcon_array_fetch_long(&attribute, field, 5, PH_NOISY);
@@ -404,7 +404,7 @@ PHP_METHOD(Phalcon_Db_Adapter_Pdo_Sqlite, describeColumns){
 			phalcon_array_update_str_bool(&definition, SL("primary"), 1, 0);
 		}
 
-		/** 
+		/**
 		 * Check if the column allows null values
 		 */
 		phalcon_array_fetch_long(&attribute, field, 3, PH_NOISY);
@@ -414,7 +414,7 @@ PHP_METHOD(Phalcon_Db_Adapter_Pdo_Sqlite, describeColumns){
 
 		phalcon_array_fetch_long(&column_name, field, 1, PH_NOISY);
 
-		/** 
+		/**
 		 * If the column set the default values, get it
 		 */
 		phalcon_array_fetch_long(&attribute, field, 4, PH_NOISY);
@@ -422,7 +422,7 @@ PHP_METHOD(Phalcon_Db_Adapter_Pdo_Sqlite, describeColumns){
 			phalcon_array_update_str(&definition, SL("default"), &attribute, PH_COPY);
 		}
 
-		/** 
+		/**
 		 * Every column is stored as a Phalcon\Db\Column
 		 */
 		object_init_ex(&column, phalcon_db_column_ce);
@@ -459,7 +459,7 @@ PHP_METHOD(Phalcon_Db_Adapter_Pdo_Sqlite, describeIndexes){
 
 	phalcon_read_property(&dialect, getThis(), SL("_dialect"), PH_NOISY);
 
-	/** 
+	/**
 	 * We're using FETCH_NUM to fetch the columns
 	 */
 	ZVAL_LONG(&fetch_num, PDO_FETCH_NUM);
@@ -467,7 +467,7 @@ PHP_METHOD(Phalcon_Db_Adapter_Pdo_Sqlite, describeIndexes){
 	PHALCON_CALL_METHOD(&sql, &dialect, "describeindexes", table, &schema);
 	PHALCON_CALL_METHOD(&describe, getThis(), "fetchall", &sql, &fetch_num);
 
-	/** 
+	/**
 	 * Cryptic Guide: 0: position, 1: name
 	 */
 	array_init(&indexes);
@@ -527,22 +527,22 @@ PHP_METHOD(Phalcon_Db_Adapter_Pdo_Sqlite, describeReferences){
 
 	phalcon_read_property(&dialect, getThis(), SL("_dialect"), PH_NOISY);
 
-	/** 
+	/**
 	 * Get the SQL to describe the references
 	 */
 	PHALCON_CALL_METHOD(&sql, &dialect, "describereferences", table, schema);
 
-	/** 
+	/**
 	 * We're using FETCH_NUM to fetch the columns
 	 */
 	ZVAL_LONG(&fetch_num, PDO_FETCH_NUM);
 
-	/** 
+	/**
 	 * Execute the SQL describing the references
 	 */
 	PHALCON_CALL_METHOD(&describe, getThis(), "fetchall", &sql, &fetch_num);
 
-	/** 
+	/**
 	 * Cryptic Guide: 2: table, 3: from, 4: to
 	 */
 	array_init(&reference_objects);
@@ -572,7 +572,7 @@ PHP_METHOD(Phalcon_Db_Adapter_Pdo_Sqlite, describeReferences){
 		phalcon_array_update_str(&reference_array, SL("columns"), &columns, PH_COPY);
 		phalcon_array_update_str(&reference_array, SL("referencedColumns"), &referenced_columns, PH_COPY);
 
-		/** 
+		/**
 		 * Every route is abstracted as a Phalcon\Db\Reference instance
 		 */
 		object_init_ex(&reference, phalcon_db_reference_ce);

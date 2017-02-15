@@ -62,7 +62,7 @@ PHP_METHOD(Phalcon_Db_Adapter_Pdo_Mysql, unescapeArray);
 
 static const zend_function_entry phalcon_db_adapter_pdo_mysql_method_entry[] = {
 	PHP_ME(Phalcon_Db_Adapter_Pdo_Mysql, escapeIdentifier, arginfo_phalcon_db_adapterinterface_escapeidentifier, ZEND_ACC_PUBLIC)
-	PHP_ME(Phalcon_Db_Adapter_Pdo_Mysql, describeColumns, arginfo_phalcon_db_adapterinterface_describecolumns, ZEND_ACC_PUBLIC)
+	PHP_ME(Phalcon_Db_Adapter_Pdo_Mysql, describeColumns, arginfo_phalcon_db_adapter_pdo_describecolumns, ZEND_ACC_PUBLIC)
 	PHP_ME(Phalcon_Db_Adapter_Pdo_Mysql, escapeBytea, arginfo_phalcon_db_adapterinterface_escapebytea, ZEND_ACC_PUBLIC)
 	PHP_ME(Phalcon_Db_Adapter_Pdo_Mysql, unescapeBytea, arginfo_phalcon_db_adapterinterface_unescapebytea, ZEND_ACC_PUBLIC)
 	PHP_ME(Phalcon_Db_Adapter_Pdo_Mysql, escapeArray, arginfo_phalcon_db_adapterinterface_escapearray, ZEND_ACC_PUBLIC)
@@ -97,7 +97,7 @@ PHP_METHOD(Phalcon_Db_Adapter_Pdo_Mysql, escapeIdentifier){
 
 	phalcon_fetch_params(0, 1, 0, &identifier);
 
-	if (Z_TYPE_P(identifier) == IS_ARRAY) { 
+	if (Z_TYPE_P(identifier) == IS_ARRAY) {
 		phalcon_array_fetch_long(&domain, identifier, 0, PH_NOISY);
 		phalcon_array_fetch_long(&name, identifier, 1, PH_NOISY);
 		if (PHALCON_GLOBAL(db).escape_identifiers) {
@@ -142,17 +142,17 @@ PHP_METHOD(Phalcon_Db_Adapter_Pdo_Mysql, describeColumns){
 
 	phalcon_read_property(&dialect, getThis(), SL("_dialect"), PH_NOISY);
 
-	/** 
+	/**
 	 * Get the SQL to describe a table
 	 */
 	PHALCON_CALL_METHOD(&sql, &dialect, "describecolumns", table, &schema);
 
-	/** 
+	/**
 	 * We're using FETCH_NUM to fetch the columns
 	 */
 	ZVAL_LONG(&fetch_num, PDO_FETCH_NUM);
 
-	/** 
+	/**
 	 * Get the describe
 	 */
 	PHALCON_CALL_METHOD(&describe, getThis(), "fetchall", &sql, &fetch_num);
@@ -161,7 +161,7 @@ PHP_METHOD(Phalcon_Db_Adapter_Pdo_Mysql, describeColumns){
 
 	ZVAL_STRING(&size_pattern, "#\\(([0-9]++)(?:,\\s*([0-9]++))?\\)#");
 
-	/** 
+	/**
 	 * Field Indexes: 0:name, 1:type, 2:not null, 3:key, 4:default, 5:extra
 	 */
 	ZEND_HASH_FOREACH_VAL(Z_ARRVAL(describe), field) {
@@ -173,12 +173,12 @@ PHP_METHOD(Phalcon_Db_Adapter_Pdo_Mysql, describeColumns){
 		array_init(&definition);
 		add_assoc_long_ex(&definition, SL("bindType"), PHALCON_DB_COLUMN_BIND_PARAM_STR);
 
-		/** 
+		/**
 		 * By checking every column type we convert it to a Phalcon\Db\Column
 		 */
 		phalcon_array_fetch_long(&column_type, field, 1, PH_NOISY);
 
-		/** 
+		/**
 		 * If the column type has a parentheses we try to get the column size from it
 		 */
 		if (phalcon_memnstr_str(&column_type, SL("("))) {
@@ -199,7 +199,7 @@ PHP_METHOD(Phalcon_Db_Adapter_Pdo_Mysql, describeColumns){
 			}
 		}
 
-		/** 
+		/**
 		 * Check the column type to get the correct Phalcon type
 		 */
 		while (1) {
@@ -418,14 +418,14 @@ PHP_METHOD(Phalcon_Db_Adapter_Pdo_Mysql, describeColumns){
 			break;
 		}
 
-		/** 
+		/**
 		 * Check if the column is unsigned, only MySQL support this
 		 */
 		if (phalcon_memnstr_str(&column_type, SL("unsigned"))) {
 			phalcon_array_update_str(&definition, SL("unsigned"), &PHALCON_GLOBAL(z_true), PH_COPY);
 		}
 
-		/** 
+		/**
 		 * Positions
 		 */
 		if (Z_TYPE(old_column) <= IS_NULL) {
@@ -434,7 +434,7 @@ PHP_METHOD(Phalcon_Db_Adapter_Pdo_Mysql, describeColumns){
 			phalcon_array_update_str(&definition, SL("after"), &old_column, PH_COPY);
 		}
 
-		/** 
+		/**
 		 * Check if the field is primary key
 		 */
 		phalcon_array_fetch_long(&attribute, field, 3, PH_NOISY);
@@ -442,7 +442,7 @@ PHP_METHOD(Phalcon_Db_Adapter_Pdo_Mysql, describeColumns){
 			phalcon_array_update_str(&definition, SL("primary"), &PHALCON_GLOBAL(z_true), PH_COPY);
 		}
 
-		/** 
+		/**
 		 * Check if the column allows null values
 		 */
 		phalcon_array_fetch_long(&attribute, field, 2, PH_NOISY);
@@ -450,7 +450,7 @@ PHP_METHOD(Phalcon_Db_Adapter_Pdo_Mysql, describeColumns){
 			phalcon_array_update_str(&definition, SL("notNull"), &PHALCON_GLOBAL(z_true), PH_COPY);
 		}
 
-		/** 
+		/**
 		 * Check if the column is auto increment
 		 */
 		phalcon_array_fetch_long(&attribute, field, 5, PH_NOISY);
@@ -460,7 +460,7 @@ PHP_METHOD(Phalcon_Db_Adapter_Pdo_Mysql, describeColumns){
 
 		phalcon_array_fetch_long(&column_name, field, 0, PH_NOISY);
 
-		/** 
+		/**
 		 * If the column set the default values, get it
 		 */
 		phalcon_array_fetch_long(&attribute, field, 4, PH_NOISY);
@@ -468,7 +468,7 @@ PHP_METHOD(Phalcon_Db_Adapter_Pdo_Mysql, describeColumns){
 			phalcon_array_update_str(&definition, SL("default"), &attribute, PH_COPY);
 		}
 
-		/** 
+		/**
 		 * Every route is stored as a Phalcon\Db\Column
 		 */
 		object_init_ex(&column, phalcon_db_column_ce);
