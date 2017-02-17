@@ -226,32 +226,16 @@ PHP_METHOD(Phalcon_Db_Adapter_Mongo, connect)
  *	$resultset = $connection->query("SELECT * FROM robots WHERE type=?", array("mechanical"));
  *</code>
  *
- * @param  string $sqlStatement
- * @param  array $bindParams
- * @param  array $bindTypes
+ * @param string $sqlStatement
+ * @param array $bindParams
+ * @param array $bindTypes
  * @return Phalcon\Db\ResultInterface
  */
 PHP_METHOD(Phalcon_Db_Adapter_Mongo, query){
 
-	zval *sql_statement, *bind_params = NULL, *bind_types = NULL, debug_message = {}, events_manager = {}, event_name = {}, status = {};
-	zval statement = {}, new_statement = {};
+	zval *sql_statement, *bind_params = NULL, *bind_types = NULL;
 
-	phalcon_fetch_params(0, 1, 2, &sql_statement, &bind_params, &bind_types);
-
-	if (unlikely(PHALCON_GLOBAL(debug).enable_debug)) {
-		PHALCON_CONCAT_SV(&debug_message, "SQL STATEMENT: ", sql_statement);
-		PHALCON_DEBUG_LOG(&debug_message);
-		if (bind_params && PHALCON_IS_NOT_EMPTY(bind_params)) {
-			PHALCON_STR(&debug_message, "Bind Params: ");
-			PHALCON_DEBUG_LOG(&debug_message);
-			PHALCON_DEBUG_LOG(bind_params);
-		}
-		if (bind_types && PHALCON_IS_NOT_EMPTY(bind_types)) {
-			PHALCON_STR(&debug_message, "Bind Types: ");
-			PHALCON_DEBUG_LOG(&debug_message);
-			PHALCON_DEBUG_LOG(bind_types);
-		}
-	}
+	phalcon_fetch_params(0, 1, 2, &statement, &bind_params, &bind_types);
 
 	if (!bind_params) {
 		bind_params = &PHALCON_GLOBAL(z_null);
@@ -261,43 +245,7 @@ PHP_METHOD(Phalcon_Db_Adapter_Mongo, query){
 		bind_types = &PHALCON_GLOBAL(z_null);
 	}
 
-	phalcon_read_property(&events_manager, getThis(), SL("_eventsManager"), PH_NOISY);
-
-	/**
-	 * Execute the beforeQuery event if a EventsManager is available
-	 */
-	if (Z_TYPE(events_manager) == IS_OBJECT) {
-		phalcon_update_property_zval(getThis(), SL("_sqlStatement"), sql_statement);
-		phalcon_update_property_zval(getThis(), SL("_sqlVariables"), bind_params);
-		phalcon_update_property_zval(getThis(), SL("_sqlBindTypes"), bind_types);
-
-		PHALCON_STR(&event_name, "db:beforeQuery");
-		PHALCON_CALL_METHOD(&status, &events_manager, "fire", &event_name, getThis(), bind_params);
-		if (PHALCON_IS_FALSE(&status)) {
-			RETURN_FALSE;
-		}
-	}
-
-	PHALCON_CALL_METHOD(&statement, getThis(), "prepare", sql_statement);
-	PHALCON_CALL_METHOD(&new_statement, getThis(), "executeprepared", &statement, bind_params, bind_types);
-	PHALCON_CPY_WRT_CTOR(&statement, &new_statement);
-
-	/**
-	 * Execute the afterQuery event if a EventsManager is available
-	 */
-	if (likely(Z_TYPE(statement) == IS_OBJECT)) {
-		if (Z_TYPE(events_manager) == IS_OBJECT) {
-			PHALCON_STR(&event_name, "db:afterQuery");
-			PHALCON_CALL_METHOD(NULL, &events_manager, "fire", &event_name, getThis(), bind_params);
-		}
-
-		object_init_ex(return_value, phalcon_db_result_mongo_ce);
-		PHALCON_CALL_METHOD(NULL, return_value, "__construct", getThis(), &statement, sql_statement, bind_params, bind_types);
-
-		return;
-	}
-
-	RETURN_CTOR(&statement);
+	PHALCON_RETURN_CALL_METHOD(getThis(), "execute", statement, bind_params, bind_types, &PHALCON_GLOBAL(z_true));
 }
 
 /**
@@ -317,13 +265,38 @@ PHP_METHOD(Phalcon_Db_Adapter_Mongo, query){
  */
 PHP_METHOD(Phalcon_Db_Adapter_Mongo, execute){
 
-	zval *sql_statement, *bind_params = NULL, *bind_types = NULL, debug_message = {}, events_manager = {}, event_name = {}, status = {}, affected_rows = {};
-	zval mongo = {}, profiler = {}, statement = {}, new_statement = {};
+	zval *statement, *bind_params = NULL, *bind_types = NULL, *flag = NULL, type = {}, debug_message = {}, processed_sql = {}, *value = NULL, processed_params = {}, processed_types = {};
+	zval events_manager = {}, event_name = {}, status = {}, affected_rows = {};
+	zval statement = {}, new_statement = {};
+	zend_string *str_key;
+	ulong idx;
 
-	phalcon_fetch_params(0, 1, 2, &sql_statement, &bind_params, &bind_types);
+	phalcon_fetch_params(0, 1, 3, &statement, &bind_params, &bind_types, &flag);
+
+	if (Z_TYPE_P(statement) != IS_ARRAY) {
+		PHALCON_THROW_EXCEPTION_STR(phalcon_cache_exception_ce, "The statement must be an arry unsuccessfully");
+		return;
+	}
+
+	if (!phalcon_array_isset_fetch_str(&type, statement, SL("type"))) {
+		PHALCON_THROW_EXCEPTION_STR(phalcon_db_exception_ce, "The parameter 'type' is required");
+		return;
+	}
+
+	if (!bind_params) {
+		bind_params = &PHALCON_GLOBAL(z_null);
+	}
+
+	if (!bind_types) {
+		bind_types = &PHALCON_GLOBAL(z_null);
+	}
+
+	if (!flag) {
+		flag = &PHALCON_GLOBAL(z_false);
+	}
 
 	if (unlikely(PHALCON_GLOBAL(debug).enable_debug)) {
-		PHALCON_CONCAT_SV(&debug_message, "SQL STATEMENT: ", sql_statement);
+		PHALCON_CONCAT_SV(&debug_message, "SQL STATEMENT: ", statement);
 		PHALCON_DEBUG_LOG(&debug_message);
 		if (bind_params && PHALCON_IS_NOT_EMPTY(bind_params)) {
 			PHALCON_STR(&debug_message, "Bind Params: ");
@@ -337,81 +310,54 @@ PHP_METHOD(Phalcon_Db_Adapter_Mongo, execute){
 		}
 	}
 
-	if (!bind_params) {
-		bind_params = &PHALCON_GLOBAL(z_null);
-	}
-
-	if (!bind_types) {
-		bind_types = &PHALCON_GLOBAL(z_null);
-	}
-
 	/**
 	 * Execute the beforeQuery event if a EventsManager is available
 	 */
 	phalcon_read_property(&events_manager, getThis(), SL("_eventsManager"), PH_NOISY);
 	if (Z_TYPE(events_manager) == IS_OBJECT) {
-		phalcon_update_property_zval(getThis(), SL("_sqlStatement"), sql_statement);
-		phalcon_update_property_zval(getThis(), SL("_sqlVariables"), bind_params);
-		phalcon_update_property_zval(getThis(), SL("_sqlBindTypes"), bind_types);
+		phalcon_update_property_zval(getThis(), SL("_sqlStatement"), &processed_sql);
+		phalcon_update_property_zval(getThis(), SL("_sqlVariables"), &processed_params);
+		phalcon_update_property_zval(getThis(), SL("_sqlBindTypes"), &processed_types);
 
 		PHALCON_STR(&event_name, "db:beforeExecute");
-		PHALCON_CALL_METHOD(&status, &events_manager, "fire", &event_name, getThis(), bind_params);
+
+		PHALCON_CALL_METHOD(&status, &events_manager, "fire", &event_name, getThis(), &processed_params);
 		if (PHALCON_IS_FALSE(&status)) {
 			RETURN_FALSE;
 		}
 	}
 
-	if (Z_TYPE_P(bind_params) == IS_ARRAY) {
-		PHALCON_CALL_METHOD(&statement, getThis(), "prepare", sql_statement);
-		if (Z_TYPE(statement) == IS_OBJECT) {
-			PHALCON_CALL_METHOD(&new_statement, getThis(), "executeprepared", &statement, bind_params, bind_types);
-			PHALCON_CALL_METHOD(&affected_rows, &new_statement, "rowcount");
-		} else {
-			ZVAL_LONG(&affected_rows, 0);
+	if (zend_is_true(flag)) {
+		/**
+		 * Execute the afterQuery event if a EventsManager is available
+		 */
+		if (likely(Z_TYPE(new_statement) == IS_OBJECT)) {
+			if (Z_TYPE(events_manager) == IS_OBJECT) {
+				PHALCON_STR(&event_name, "db:afterExecute");
+				PHALCON_CALL_METHOD(NULL, &events_manager, "fire", &event_name, getThis(), &processed_params);
+			}
+
+			object_init_ex(return_value, phalcon_db_result_pdo_ce);
+			PHALCON_CALL_METHOD(NULL, return_value, "__construct", getThis(), &new_statement, &processed_sql, &processed_params, &processed_types);
+			return;
 		}
-	} else {
-		phalcon_read_property(&mongo, getThis(), SL("_mongo"), PH_NOISY);
-		phalcon_read_property(&profiler, getThis(), SL("_profiler"), PH_NOISY);
-		if (Z_TYPE(profiler) == IS_OBJECT) {
-			PHALCON_CALL_METHOD(NULL, &profiler, "startprofile", sql_statement);
-			PHALCON_CALL_METHOD(&affected_rows, &mongo, "exec", sql_statement);
-			PHALCON_CALL_METHOD(NULL, &profiler, "stopprofile");
-		} else {
-			PHALCON_CALL_METHOD(&affected_rows, &mongo, "exec", sql_statement);
-		}
+
+		RETURN_CTOR(&new_statement);
 	}
 
-	/**
-	 * Execute the afterQuery event if a EventsManager is available
-	 */
-	if (Z_TYPE(affected_rows) == IS_LONG) {
-		phalcon_update_property_zval(getThis(), SL("_affectedRows"), &affected_rows);
-		if (Z_TYPE(events_manager) == IS_OBJECT) {
-			PHALCON_STR(&event_name, "db:afterExecute");
-			PHALCON_CALL_METHOD(NULL, &events_manager, "fire", &event_name, getThis(), bind_params);
-		}
+	if (likely(Z_TYPE(new_statement) == IS_OBJECT)) {
+		PHALCON_CALL_METHOD(&affected_rows, &new_statement, "rowcount");
+	} else {
+		ZVAL_LONG(&affected_rows, 0);
+	}
+
+	phalcon_update_property_zval(getThis(), SL("_affectedRows"), &affected_rows);
+	if (Z_TYPE(events_manager) == IS_OBJECT) {
+		PHALCON_STR(&event_name, "db:afterExecute");
+		PHALCON_CALL_METHOD(NULL, &events_manager, "fire", &event_name, getThis(), &processed_params);
 	}
 
 	RETURN_TRUE;
-}
-
-/**
- * Closes the active connection returning success. Phalcon automatically closes and destroys
- * active connections when the request ends
- *
- * @return boolean
- */
-PHP_METHOD(Phalcon_Db_Adapter_Mongo, close){
-
-	zval mongo = {};
-
-	phalcon_read_property(&mongo, getThis(), SL("_mongo"), PH_NOISY);
-	if (likely(Z_TYPE(mongo) == IS_OBJECT)) {
-		phalcon_update_property_zval(getThis(), SL("_mongo"), &PHALCON_GLOBAL(z_null));
-		RETURN_TRUE;
-	}
-
-	RETURN_FALSE;
 }
 
 /**

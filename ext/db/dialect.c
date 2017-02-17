@@ -42,6 +42,10 @@
  */
 zend_class_entry *phalcon_db_dialect_ce;
 
+PHP_METHOD(Phalcon_Db_Dialect, select);
+PHP_METHOD(Phalcon_Db_Dialect, insert);
+PHP_METHOD(Phalcon_Db_Dialect, update);
+PHP_METHOD(Phalcon_Db_Dialect, delete);
 PHP_METHOD(Phalcon_Db_Dialect, limit);
 PHP_METHOD(Phalcon_Db_Dialect, forUpdate);
 PHP_METHOD(Phalcon_Db_Dialect, sharedLock);
@@ -50,10 +54,6 @@ PHP_METHOD(Phalcon_Db_Dialect, getSqlExpression);
 PHP_METHOD(Phalcon_Db_Dialect, getSqlExpressionCase);
 PHP_METHOD(Phalcon_Db_Dialect, getSqlExpressionFunctionCall);
 PHP_METHOD(Phalcon_Db_Dialect, getSqlTable);
-PHP_METHOD(Phalcon_Db_Dialect, select);
-PHP_METHOD(Phalcon_Db_Dialect, insert);
-PHP_METHOD(Phalcon_Db_Dialect, update);
-PHP_METHOD(Phalcon_Db_Dialect, delete);
 PHP_METHOD(Phalcon_Db_Dialect, supportsSavepoints);
 PHP_METHOD(Phalcon_Db_Dialect, supportsReleaseSavepoints);
 PHP_METHOD(Phalcon_Db_Dialect, createSavepoint);
@@ -65,6 +65,35 @@ PHP_METHOD(Phalcon_Db_Dialect, getCustomFunctions);
 PHP_METHOD(Phalcon_Db_Dialect, escape);
 PHP_METHOD(Phalcon_Db_Dialect, escapeSchema);
 PHP_METHOD(Phalcon_Db_Dialect, prepareTable);
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_phalcon_db_dialect_limit, 0, 0, 2)
+	ZEND_ARG_INFO(0, sqlQuery)
+	ZEND_ARG_INFO(0, number)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_phalcon_db_dialect_forupdate, 0, 0, 1)
+	ZEND_ARG_INFO(0, sqlQuery)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_phalcon_db_dialect_sharedlock, 0, 0, 1)
+	ZEND_ARG_INFO(0, sqlQuery)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_phalcon_db_dialect_getcolumnlist, 0, 0, 1)
+	ZEND_ARG_INFO(0, columnList)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_phalcon_db_dialect_createsavepoint, 0, 0, 1)
+	ZEND_ARG_INFO(0, name)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_phalcon_db_dialect_releasesavepoint, 0, 0, 1)
+	ZEND_ARG_INFO(0, name)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_phalcon_db_dialect_rollbacksavepoint, 0, 0, 1)
+	ZEND_ARG_INFO(0, name)
+ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_phalcon_db_dialect_getsqlexpression, 0, 0, 1)
 	ZEND_ARG_INFO(0, expression)
@@ -110,29 +139,52 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_phalcon_db_dialect_preparetable, 0, 0, 1)
 ZEND_END_ARG_INFO()
 
 static const zend_function_entry phalcon_db_dialect_method_entry[] = {
-	PHP_ME(Phalcon_Db_Dialect, limit, arginfo_phalcon_db_dialectinterface_limit, ZEND_ACC_PUBLIC)
-	PHP_ME(Phalcon_Db_Dialect, forUpdate, arginfo_phalcon_db_dialectinterface_forupdate, ZEND_ACC_PUBLIC)
-	PHP_ME(Phalcon_Db_Dialect, sharedLock, arginfo_phalcon_db_dialectinterface_sharedlock, ZEND_ACC_PUBLIC)
-	PHP_ME(Phalcon_Db_Dialect, getColumnList, arginfo_phalcon_db_dialectinterface_getcolumnlist, ZEND_ACC_PUBLIC)
-	PHP_ME(Phalcon_Db_Dialect, getSqlExpression, arginfo_phalcon_db_dialect_getsqlexpression, ZEND_ACC_PUBLIC)
-	PHP_ME(Phalcon_Db_Dialect, getSqlExpressionCase, arginfo_phalcon_db_dialect_getsqlexpressioncase, ZEND_ACC_PUBLIC)
-	PHP_ME(Phalcon_Db_Dialect, getSqlExpressionFunctionCall, arginfo_phalcon_db_dialect_getsqlexpressionfunctioncall, ZEND_ACC_PUBLIC)
-	PHP_ME(Phalcon_Db_Dialect, getSqlTable, arginfo_phalcon_db_dialect_getsqltable, ZEND_ACC_PUBLIC)
 	PHP_ME(Phalcon_Db_Dialect, select, arginfo_phalcon_db_dialectinterface_select, ZEND_ACC_PUBLIC)
 	PHP_ME(Phalcon_Db_Dialect, insert, arginfo_phalcon_db_dialectinterface_insert, ZEND_ACC_PUBLIC)
 	PHP_ME(Phalcon_Db_Dialect, update, arginfo_phalcon_db_dialectinterface_update, ZEND_ACC_PUBLIC)
 	PHP_ME(Phalcon_Db_Dialect, delete, arginfo_phalcon_db_dialectinterface_delete, ZEND_ACC_PUBLIC)
+	PHP_ME(Phalcon_Db_Dialect, limit, arginfo_phalcon_db_dialect_limit, ZEND_ACC_PUBLIC)
+	PHP_ME(Phalcon_Db_Dialect, forUpdate, arginfo_phalcon_db_dialect_forupdate, ZEND_ACC_PUBLIC)
+	PHP_ME(Phalcon_Db_Dialect, sharedLock, arginfo_phalcon_db_dialect_sharedlock, ZEND_ACC_PUBLIC)
+	PHP_ME(Phalcon_Db_Dialect, getColumnList, arginfo_phalcon_db_dialect_getcolumnlist, ZEND_ACC_PUBLIC)
+	PHP_ME(Phalcon_Db_Dialect, getSqlExpression, arginfo_phalcon_db_dialect_getsqlexpression, ZEND_ACC_PUBLIC)
+	PHP_ME(Phalcon_Db_Dialect, getSqlExpressionCase, arginfo_phalcon_db_dialect_getsqlexpressioncase, ZEND_ACC_PUBLIC)
+	PHP_ME(Phalcon_Db_Dialect, getSqlExpressionFunctionCall, arginfo_phalcon_db_dialect_getsqlexpressionfunctioncall, ZEND_ACC_PUBLIC)
+	PHP_ME(Phalcon_Db_Dialect, getSqlTable, arginfo_phalcon_db_dialect_getsqltable, ZEND_ACC_PUBLIC)
 	PHP_ME(Phalcon_Db_Dialect, supportsSavepoints, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(Phalcon_Db_Dialect, supportsReleaseSavepoints, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(Phalcon_Db_Dialect, createSavepoint, arginfo_phalcon_db_dialectinterface_createsavepoint, ZEND_ACC_PUBLIC)
-	PHP_ME(Phalcon_Db_Dialect, releaseSavepoint, arginfo_phalcon_db_dialectinterface_releasesavepoint, ZEND_ACC_PUBLIC)
-	PHP_ME(Phalcon_Db_Dialect, rollbackSavepoint, arginfo_phalcon_db_dialectinterface_rollbacksavepoint, ZEND_ACC_PUBLIC)
+	PHP_ME(Phalcon_Db_Dialect, createSavepoint, arginfo_phalcon_db_dialect_createsavepoint, ZEND_ACC_PUBLIC)
+	PHP_ME(Phalcon_Db_Dialect, releaseSavepoint, arginfo_phalcon_db_dialect_releasesavepoint, ZEND_ACC_PUBLIC)
+	PHP_ME(Phalcon_Db_Dialect, rollbackSavepoint, arginfo_phalcon_db_dialect_rollbacksavepoint, ZEND_ACC_PUBLIC)
 	PHP_ME(Phalcon_Db_Dialect, getEscapeChar, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(Phalcon_Db_Dialect, registerCustomFunction, arginfo_phalcon_db_dialect_registercustomfunction, ZEND_ACC_PUBLIC)
 	PHP_ME(Phalcon_Db_Dialect, getCustomFunctions, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(Phalcon_Db_Dialect, escape, arginfo_phalcon_db_dialect_escape, ZEND_ACC_PUBLIC)
 	PHP_ME(Phalcon_Db_Dialect, escapeSchema, arginfo_phalcon_db_dialect_escapeschema, ZEND_ACC_PUBLIC)
 	PHP_ME(Phalcon_Db_Dialect, prepareTable, arginfo_phalcon_db_dialect_preparetable, ZEND_ACC_PUBLIC)
+	PHP_ABSTRACT_ME(Phalcon_Db_Dialect, getColumnDefinition, arginfo_phalcon_db_dialect_getcolumndefinition)
+	PHP_ABSTRACT_ME(Phalcon_Db_Dialect, addColumn, arginfo_phalcon_db_dialect_addcolumn)
+	PHP_ABSTRACT_ME(Phalcon_Db_Dialect, modifyColumn, arginfo_phalcon_db_dialect_modifycolumn)
+	PHP_ABSTRACT_ME(Phalcon_Db_Dialect, dropColumn, arginfo_phalcon_db_dialect_dropcolumn)
+	PHP_ABSTRACT_ME(Phalcon_Db_Dialect, addIndex, arginfo_phalcon_db_dialect_addindex)
+	PHP_ABSTRACT_ME(Phalcon_Db_Dialect, dropIndex, arginfo_phalcon_db_dialect_dropindex)
+	PHP_ABSTRACT_ME(Phalcon_Db_Dialect, addPrimaryKey, arginfo_phalcon_db_dialect_addprimarykey)
+	PHP_ABSTRACT_ME(Phalcon_Db_Dialect, dropPrimaryKey, arginfo_phalcon_db_dialect_dropprimarykey)
+	PHP_ABSTRACT_ME(Phalcon_Db_Dialect, addForeignKey, arginfo_phalcon_db_dialect_addforeignkey)
+	PHP_ABSTRACT_ME(Phalcon_Db_Dialect, dropForeignKey, arginfo_phalcon_db_dialect_dropforeignkey)
+	PHP_ABSTRACT_ME(Phalcon_Db_Dialect, createTable, arginfo_phalcon_db_dialect_createtable)
+	PHP_ABSTRACT_ME(Phalcon_Db_Dialect, dropTable, arginfo_phalcon_db_dialect_droptable)
+	PHP_ABSTRACT_ME(Phalcon_Db_Dialect, createView, arginfo_phalcon_db_dialect_createview)
+	PHP_ABSTRACT_ME(Phalcon_Db_Dialect, dropView, arginfo_phalcon_db_dialect_dropview)
+	PHP_ABSTRACT_ME(Phalcon_Db_Dialect, tableExists, arginfo_phalcon_db_dialect_tableexists)
+	PHP_ABSTRACT_ME(Phalcon_Db_Dialect, viewExists, arginfo_phalcon_db_dialect_viewexists)
+	PHP_ABSTRACT_ME(Phalcon_Db_Dialect, describeColumns, arginfo_phalcon_db_dialect_describecolumns)
+	PHP_ABSTRACT_ME(Phalcon_Db_Dialect, listTables, arginfo_phalcon_db_dialect_listtables)
+	PHP_ABSTRACT_ME(Phalcon_Db_Dialect, listViews, arginfo_phalcon_db_dialect_listtables)
+	PHP_ABSTRACT_ME(Phalcon_Db_Dialect, describeIndexes, arginfo_phalcon_db_dialect_describeindexes)
+	PHP_ABSTRACT_ME(Phalcon_Db_Dialect, describeReferences, arginfo_phalcon_db_dialect_describereferences)
+	PHP_ABSTRACT_ME(Phalcon_Db_Dialect, tableOptions, arginfo_phalcon_db_dialect_tableoptions)
+	PHP_ABSTRACT_ME(Phalcon_Db_Dialect, getDefaultValue, arginfo_phalcon_db_dialect_getdefaultvalue)
 	PHP_FE_END
 };
 
@@ -1506,3 +1558,216 @@ PHP_METHOD(Phalcon_Db_Dialect, prepareTable){
 		}
 	}
 }
+
+/**
+ * Gets the column name in MySQL
+ *
+ * @param Phalcon\Db\ColumnInterface $column
+ */
+PHALCON_DOC_METHOD(Phalcon_Db_Dialect, getColumnDefinition);
+
+/**
+ * Generates SQL to add a column to a table
+ *
+ * @param string $tableName
+ * @param string $schemaName
+ * @param Phalcon\Db\ColumnInterface $column
+ * @return string
+ */
+PHALCON_DOC_METHOD(Phalcon_Db_Dialect, addColumn);
+
+/**
+ * Generates SQL to modify a column in a table
+ *
+ * @param string $tableName
+ * @param string $schemaName
+ * @param Phalcon\Db\ColumnInterface $column
+ * @param Phalcon\Db\ColumnInterface $currentColumn
+ * @return string
+ */
+PHALCON_DOC_METHOD(Phalcon_Db_Dialect, modifyColumn);
+
+/**
+ * Generates SQL to delete a column from a table
+ *
+ * @param string $tableName
+ * @param string $schemaName
+ * @param string $columnName
+ * @return 	string
+ */
+PHALCON_DOC_METHOD(Phalcon_Db_Dialect, dropColumn);
+
+/**
+ * Generates SQL to add an index to a table
+ *
+ * @param string $tableName
+ * @param string $schemaName
+ * @param Phalcon\Db\IndexInterface $index
+ * @return string
+ */
+PHALCON_DOC_METHOD(Phalcon_Db_Dialect, addIndex);
+
+/**
+ * Generates SQL to delete an index from a table
+ *
+ * @param string $tableName
+ * @param string $schemaName
+ * @param string $indexName
+ * @return string
+ */
+PHALCON_DOC_METHOD(Phalcon_Db_Dialect, dropIndex);
+
+/**
+ * Generates SQL to add the primary key to a table
+ *
+ * @param string $tableName
+ * @param string $schemaName
+ * @param Phalcon\Db\IndexInterface $index
+ * @return string
+ */
+PHALCON_DOC_METHOD(Phalcon_Db_Dialect, addPrimaryKey);
+
+/**
+ * Generates SQL to delete primary key from a table
+ *
+ * @param string $tableName
+ * @param string $schemaName
+ * @return string
+ */
+PHALCON_DOC_METHOD(Phalcon_Db_Dialect, dropPrimaryKey);
+
+/**
+ * Generates SQL to add an index to a table
+ *
+ * @param string $tableName
+ * @param string $schemaName
+ * @param Phalcon\Db\ReferenceInterface $reference
+ * @return string
+ */
+PHALCON_DOC_METHOD(Phalcon_Db_Dialect, addForeignKey);
+
+/**
+ * Generates SQL to delete a foreign key from a table
+ *
+ * @param string $tableName
+ * @param string $schemaName
+ * @param string $referenceName
+ * @return string
+ */
+PHALCON_DOC_METHOD(Phalcon_Db_Dialect, dropForeignKey);
+
+/**
+ * Generates SQL to create a table
+ *
+ * @param string $tableName
+ * @param string $schemaName
+ * @param array $definition
+ * @return string
+ */
+PHALCON_DOC_METHOD(Phalcon_Db_Dialect, createTable);
+
+/**
+ * Generates SQL to drop a table
+ *
+ * @param string $tableName
+ * @param string $schemaName
+ * @return string
+ */
+PHALCON_DOC_METHOD(Phalcon_Db_Dialect, dropTable);
+
+/**
+ * Generates SQL to create a view
+ *
+ * @param string $viewName
+ * @param string $schemaName
+ * @param array $definition
+ * @return string
+ */
+PHALCON_DOC_METHOD(Phalcon_Db_Dialect, createView);
+
+/**
+ * Generates SQL to drop a view
+ *
+ * @param string $viewName
+ * @param string $schemaName
+ * @return string
+ */
+PHALCON_DOC_METHOD(Phalcon_Db_Dialect, dropView);
+
+/**
+ * Generates SQL checking for the existence of a schema.table
+ *
+ * @param string $tableName
+ * @param string $schemaName
+ * @return string
+ */
+PHALCON_DOC_METHOD(Phalcon_Db_Dialect, tableExists);
+
+/**
+ * Generates SQL checking for the existence of a schema.view
+ *
+ * @param string $viewName
+ * @param string $schemaName
+ * @return string
+ */
+PHALCON_DOC_METHOD(Phalcon_Db_Dialect, viewExists);
+
+/**
+ * Generates SQL to describe a table
+ *
+ * @param string $table
+ * @param string $schema
+ * @return string
+ */
+PHALCON_DOC_METHOD(Phalcon_Db_Dialect, describeColumns);
+
+/**
+ * List all tables on database
+ *
+ * @param string $schemaName
+ * @return array
+ */
+PHALCON_DOC_METHOD(Phalcon_Db_Dialect, listTables);
+
+/**
+ * List all views on database
+ *
+ * @param string $schemaName
+ * @return array
+ */
+PHALCON_DOC_METHOD(Phalcon_Db_Dialect, listViews);
+
+/**
+ * Generates SQL to query indexes on a table
+ *
+ * @param string $table
+ * @param string $schema
+ * @return string
+ */
+PHALCON_DOC_METHOD(Phalcon_Db_Dialect, describeIndexes);
+
+/**
+ * Generates SQL to query foreign keys on a table
+ *
+ * @param string $table
+ * @param string $schema
+ * @return string
+ */
+PHALCON_DOC_METHOD(Phalcon_Db_Dialect, describeReferences);
+
+/**
+ * Generates the SQL to describe the table creation options
+ *
+ * @param string $table
+ * @param string $schema
+ * @return string
+ */
+PHALCON_DOC_METHOD(Phalcon_Db_Dialect, tableOptions);
+
+/**
+ * Return the default value
+ *
+ * @param string $name
+ * @return string
+ */
+PHALCON_DOC_METHOD(Phalcon_Db_Dialect, getDefaultValue);

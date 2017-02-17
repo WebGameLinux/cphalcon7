@@ -27,24 +27,6 @@ extern zend_class_entry *phalcon_db_adapterinterface_ce;
 
 PHALCON_INIT_CLASS(Phalcon_Db_AdapterInterface);
 
-ZEND_BEGIN_ARG_INFO_EX(arginfo_phalcon_db_adapterinterface_fetchone, 0, 0, 1)
-	ZEND_ARG_TYPE_INFO(0, sqlQuery, IS_STRING, 0)
-	ZEND_ARG_TYPE_INFO(0, fetchMode, IS_LONG, 1)
-	ZEND_ARG_TYPE_INFO(0, placeholders, IS_ARRAY, 1)
-	ZEND_ARG_TYPE_INFO(0, dataTypes, IS_ARRAY, 1)
-	ZEND_ARG_INFO(0, fetchArgument)
-	ZEND_ARG_TYPE_INFO(0, ctorArgs, IS_ARRAY, 1)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_phalcon_db_adapterinterface_fetchall, 0, 0, 1)
-	ZEND_ARG_TYPE_INFO(0, sqlQuery, IS_STRING, 0)
-	ZEND_ARG_TYPE_INFO(0, fetchMode, IS_LONG, 1)
-	ZEND_ARG_TYPE_INFO(0, placeholders, IS_ARRAY, 1)
-	ZEND_ARG_TYPE_INFO(0, dataTypes, IS_ARRAY, 1)
-	ZEND_ARG_INFO(0, fetchArgument)
-	ZEND_ARG_TYPE_INFO(0, ctorArgs, IS_ARRAY, 1)
-ZEND_END_ARG_INFO()
-
 ZEND_BEGIN_ARG_INFO_EX(arginfo_phalcon_db_adapterinterface_insert, 0, 0, 2)
 	ZEND_ARG_TYPE_INFO(0, table, IS_STRING, 0)
 	ZEND_ARG_TYPE_INFO(0, values, IS_ARRAY, 0)
@@ -81,6 +63,7 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_phalcon_db_adapterinterface_execute, 0, 0, 1)
 	ZEND_ARG_INFO(0, sqlStatement)
 	ZEND_ARG_TYPE_INFO(0, placeholders, IS_ARRAY, 1)
 	ZEND_ARG_TYPE_INFO(0, dataTypes, IS_ARRAY, 1)
+	ZEND_ARG_TYPE_INFO(0, flag, _IS_BOOL, 1)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_phalcon_db_adapterinterface_lastinsertid, 0, 0, 0)

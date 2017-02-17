@@ -49,12 +49,12 @@ class DbProfilerListener
 		$this->_profiler = new DbProfiler();
 	}
 
-	public function beforeQuery($event, $connection)
+	public function beforeExecute($event, $connection)
 	{
 		 $this->_profiler->startProfile($connection->getSQLStatement(), $connection->getSQLVariables(), $connection->getSQLBindTypes());
 	}
 
-	public function afterQuery($event, $connection)
+	public function afterExecute($event, $connection)
 	{
 		$this->_profiler->stopProfile();
 	}

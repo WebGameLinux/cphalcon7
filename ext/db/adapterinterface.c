@@ -24,8 +24,6 @@
 zend_class_entry *phalcon_db_adapterinterface_ce;
 
 static const zend_function_entry phalcon_db_adapterinterface_method_entry[] = {
-	PHP_ABSTRACT_ME(Phalcon_Db_AdapterInterface, fetchOne, arginfo_phalcon_db_adapterinterface_fetchone)
-	PHP_ABSTRACT_ME(Phalcon_Db_AdapterInterface, fetchAll, arginfo_phalcon_db_adapterinterface_fetchall)
 	PHP_ABSTRACT_ME(Phalcon_Db_AdapterInterface, insert, arginfo_phalcon_db_adapterinterface_insert)
 	PHP_ABSTRACT_ME(Phalcon_Db_AdapterInterface, update, arginfo_phalcon_db_adapterinterface_update)
 	PHP_ABSTRACT_ME(Phalcon_Db_AdapterInterface, delete, arginfo_phalcon_db_adapterinterface_delete)
@@ -39,9 +37,6 @@ static const zend_function_entry phalcon_db_adapterinterface_method_entry[] = {
 	PHP_ABSTRACT_ME(Phalcon_Db_AdapterInterface, affectedRows, NULL)
 	PHP_ABSTRACT_ME(Phalcon_Db_AdapterInterface, close, NULL)
 	PHP_ABSTRACT_ME(Phalcon_Db_AdapterInterface, lastInsertId, arginfo_phalcon_db_adapterinterface_lastinsertid)
-	PHP_ABSTRACT_ME(Phalcon_Db_AdapterInterface, begin, NULL)
-	PHP_ABSTRACT_ME(Phalcon_Db_AdapterInterface, rollback, NULL)
-	PHP_ABSTRACT_ME(Phalcon_Db_AdapterInterface, commit, NULL)
 	PHP_ABSTRACT_ME(Phalcon_Db_AdapterInterface, getInternalHandler, NULL)
 	PHP_ABSTRACT_ME(Phalcon_Db_AdapterInterface, useExplicitIdValue, NULL)
 	PHP_ABSTRACT_ME(Phalcon_Db_AdapterInterface, getDefaultIdValue, NULL)
@@ -65,26 +60,6 @@ PHALCON_INIT_CLASS(Phalcon_Db_AdapterInterface){
 
 	return SUCCESS;
 }
-
-/**
- * Returns the first row in a SQL query result
- *
- * @param string $sqlQuery
- * @param int $fetchMode
- * @param int $placeholders
- * @return array
- */
-PHALCON_DOC_METHOD(Phalcon_Db_AdapterInterface, fetchOne);
-
-/**
- * Dumps the complete result of a query into an array
- *
- * @param string $sqlQuery
- * @param int $fetchMode
- * @param int $placeholders
- * @return array
- */
-PHALCON_DOC_METHOD(Phalcon_Db_AdapterInterface, fetchAll);
 
 /**
  * Inserts data into a table using custom RBDM SQL syntax
@@ -168,8 +143,8 @@ PHALCON_DOC_METHOD(Phalcon_Db_AdapterInterface, getDialect);
  * This method is automatically called in Phalcon\Db\Adapter\Pdo constructor.
  * Call it when you need to restore a database connection
  *
- * @param 	array $descriptor
- * @return 	boolean
+ * @param array $descriptor
+ * @return boolean
  */
 PHALCON_DOC_METHOD(Phalcon_Db_AdapterInterface, connect);
 
@@ -177,9 +152,9 @@ PHALCON_DOC_METHOD(Phalcon_Db_AdapterInterface, connect);
  * Sends SQL statements to the database server returning the success state.
  * Use this method only when the SQL statement sent to the server return rows
  *
- * @param  string $sqlStatement
- * @param  array $placeholders
- * @param  array $dataTypes
+ * @param string $sqlStatement
+ * @param array $placeholders
+ * @param array $dataTypes
  * @return Phalcon\Db\ResultInterface
  */
 PHALCON_DOC_METHOD(Phalcon_Db_AdapterInterface, query);
@@ -188,9 +163,10 @@ PHALCON_DOC_METHOD(Phalcon_Db_AdapterInterface, query);
  * Sends SQL statements to the database server returning the success state.
  * Use this method only when the SQL statement sent to the server don't return any row
  *
- * @param  string $sqlStatement
- * @param  array $placeholders
- * @param  array $dataTypes
+ * @param string $sqlStatement
+ * @param array $placeholders
+ * @param array $dataTypes
+ * @param boolean $flag
  * @return boolean
  */
 PHALCON_DOC_METHOD(Phalcon_Db_AdapterInterface, execute);
@@ -216,34 +192,6 @@ PHALCON_DOC_METHOD(Phalcon_Db_AdapterInterface, close);
  * @return int
  */
 PHALCON_DOC_METHOD(Phalcon_Db_AdapterInterface, lastInsertId);
-
-/**
- * Starts a transaction in the connection
- *
- * @return boolean
- */
-PHALCON_DOC_METHOD(Phalcon_Db_AdapterInterface, begin);
-
-/**
- * Rollbacks the active transaction in the connection
- *
- * @return boolean
- */
-PHALCON_DOC_METHOD(Phalcon_Db_AdapterInterface, rollback);
-
-/**
- * Commits the active transaction in the connection
- *
- * @return boolean
- */
-PHALCON_DOC_METHOD(Phalcon_Db_AdapterInterface, commit);
-
-/**
- * Checks whether connection is under database transaction
- *
- * @return boolean
- */
-PHALCON_DOC_METHOD(Phalcon_Db_AdapterInterface, isUnderTransaction);
 
 /**
  * Return internal PDO handler

@@ -26,6 +26,7 @@
 #include "db/column.h"
 #include "db/index.h"
 #include "db/reference.h"
+#include "db/rawvalue.h"
 #include "debug.h"
 
 #include <ext/pdo/php_pdo_driver.h>
@@ -130,6 +131,24 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_phalcon_db_adapter_pdo_executeprepared, 0, 0, 1)
 	ZEND_ARG_INFO(0, statement)
 	ZEND_ARG_INFO(0, placeholders)
 	ZEND_ARG_INFO(0, dataTypes)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_phalcon_db_adapter_pdo_fetchone, 0, 0, 1)
+	ZEND_ARG_TYPE_INFO(0, sqlQuery, IS_STRING, 0)
+	ZEND_ARG_TYPE_INFO(0, fetchMode, IS_LONG, 1)
+	ZEND_ARG_TYPE_INFO(0, placeholders, IS_ARRAY, 1)
+	ZEND_ARG_TYPE_INFO(0, dataTypes, IS_ARRAY, 1)
+	ZEND_ARG_INFO(0, fetchArgument)
+	ZEND_ARG_TYPE_INFO(0, ctorArgs, IS_ARRAY, 1)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_phalcon_db_adapter_pdo_fetchall, 0, 0, 1)
+	ZEND_ARG_TYPE_INFO(0, sqlQuery, IS_STRING, 0)
+	ZEND_ARG_TYPE_INFO(0, fetchMode, IS_LONG, 1)
+	ZEND_ARG_TYPE_INFO(0, placeholders, IS_ARRAY, 1)
+	ZEND_ARG_TYPE_INFO(0, dataTypes, IS_ARRAY, 1)
+	ZEND_ARG_INFO(0, fetchArgument)
+	ZEND_ARG_TYPE_INFO(0, ctorArgs, IS_ARRAY, 1)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_phalcon_db_adapter_pdo_getcolumnlist, 0, 0, 1)
@@ -293,8 +312,8 @@ static const zend_function_entry phalcon_db_adapter_pdo_method_entry[] = {
 	PHP_ME(Phalcon_Db_Adapter_Pdo, executePrepared, arginfo_phalcon_db_adapter_pdo_executeprepared, ZEND_ACC_PUBLIC)
 	PHP_ME(Phalcon_Db_Adapter_Pdo, query, arginfo_phalcon_db_adapterinterface_query, ZEND_ACC_PUBLIC)
 	PHP_ME(Phalcon_Db_Adapter_Pdo, execute, arginfo_phalcon_db_adapterinterface_execute, ZEND_ACC_PUBLIC)
-	PHP_ME(Phalcon_Db_Adapter_Pdo, fetchOne, arginfo_phalcon_db_adapterinterface_fetchone, ZEND_ACC_PUBLIC)
-	PHP_ME(Phalcon_Db_Adapter_Pdo, fetchAll, arginfo_phalcon_db_adapterinterface_fetchall, ZEND_ACC_PUBLIC)
+	PHP_ME(Phalcon_Db_Adapter_Pdo, fetchOne, arginfo_phalcon_db_adapter_pdo_fetchone, ZEND_ACC_PUBLIC)
+	PHP_ME(Phalcon_Db_Adapter_Pdo, fetchAll, arginfo_phalcon_db_adapter_pdo_fetchall, ZEND_ACC_PUBLIC)
 	PHP_ME(Phalcon_Db_Adapter_Pdo, insert, arginfo_phalcon_db_adapterinterface_insert, ZEND_ACC_PUBLIC)
 	PHP_ME(Phalcon_Db_Adapter_Pdo, update, arginfo_phalcon_db_adapterinterface_update, ZEND_ACC_PUBLIC)
 	PHP_ME(Phalcon_Db_Adapter_Pdo, delete, arginfo_phalcon_db_adapterinterface_delete, ZEND_ACC_PUBLIC)
@@ -648,32 +667,16 @@ PHP_METHOD(Phalcon_Db_Adapter_Pdo, executePrepared){
  *	$resultset = $connection->query("SELECT * FROM robots WHERE type=?", array("mechanical"));
  *</code>
  *
- * @param  string $sqlStatement
- * @param  array $bindParams
- * @param  array $bindTypes
+ * @param string $sqlStatement
+ * @param array $bindParams
+ * @param array $bindTypes
  * @return Phalcon\Db\ResultInterface
  */
 PHP_METHOD(Phalcon_Db_Adapter_Pdo, query){
 
-	zval *sql_statement, *bind_params = NULL, *bind_types = NULL, debug_message = {}, events_manager = {}, event_name = {}, status = {};
-	zval statement = {}, new_statement = {};
+	zval *sql_statement, *bind_params = NULL, *bind_types = NULL;
 
 	phalcon_fetch_params(0, 1, 2, &sql_statement, &bind_params, &bind_types);
-
-	if (unlikely(PHALCON_GLOBAL(debug).enable_debug)) {
-		PHALCON_CONCAT_SV(&debug_message, "SQL STATEMENT: ", sql_statement);
-		PHALCON_DEBUG_LOG(&debug_message);
-		if (bind_params && PHALCON_IS_NOT_EMPTY(bind_params)) {
-			PHALCON_STR(&debug_message, "Bind Params: ");
-			PHALCON_DEBUG_LOG(&debug_message);
-			PHALCON_DEBUG_LOG(bind_params);
-		}
-		if (bind_types && PHALCON_IS_NOT_EMPTY(bind_types)) {
-			PHALCON_STR(&debug_message, "Bind Types: ");
-			PHALCON_DEBUG_LOG(&debug_message);
-			PHALCON_DEBUG_LOG(bind_types);
-		}
-	}
 
 	if (!bind_params) {
 		bind_params = &PHALCON_GLOBAL(z_null);
@@ -683,43 +686,7 @@ PHP_METHOD(Phalcon_Db_Adapter_Pdo, query){
 		bind_types = &PHALCON_GLOBAL(z_null);
 	}
 
-	phalcon_read_property(&events_manager, getThis(), SL("_eventsManager"), PH_NOISY);
-
-	/**
-	 * Execute the beforeQuery event if a EventsManager is available
-	 */
-	if (Z_TYPE(events_manager) == IS_OBJECT) {
-		phalcon_update_property_zval(getThis(), SL("_sqlStatement"), sql_statement);
-		phalcon_update_property_zval(getThis(), SL("_sqlVariables"), bind_params);
-		phalcon_update_property_zval(getThis(), SL("_sqlBindTypes"), bind_types);
-
-		PHALCON_STR(&event_name, "db:beforeQuery");
-		PHALCON_CALL_METHOD(&status, &events_manager, "fire", &event_name, getThis(), bind_params);
-		if (PHALCON_IS_FALSE(&status)) {
-			RETURN_FALSE;
-		}
-	}
-
-	PHALCON_CALL_METHOD(&statement, getThis(), "prepare", sql_statement);
-	PHALCON_CALL_METHOD(&new_statement, getThis(), "executeprepared", &statement, bind_params, bind_types);
-	PHALCON_CPY_WRT_CTOR(&statement, &new_statement);
-
-	/**
-	 * Execute the afterQuery event if a EventsManager is available
-	 */
-	if (likely(Z_TYPE(statement) == IS_OBJECT)) {
-		if (Z_TYPE(events_manager) == IS_OBJECT) {
-			PHALCON_STR(&event_name, "db:afterQuery");
-			PHALCON_CALL_METHOD(NULL, &events_manager, "fire", &event_name, getThis(), bind_params);
-		}
-
-		object_init_ex(return_value, phalcon_db_result_pdo_ce);
-		PHALCON_CALL_METHOD(NULL, return_value, "__construct", getThis(), &statement, sql_statement, bind_params, bind_types);
-
-		return;
-	}
-
-	RETURN_CTOR(&statement);
+	PHALCON_RETURN_CALL_METHOD(getThis(), "execute", sql_statement, bind_params, bind_types, &PHALCON_GLOBAL(z_true));
 }
 
 /**
@@ -732,17 +699,31 @@ PHP_METHOD(Phalcon_Db_Adapter_Pdo, query){
  *	$success = $connection->execute("INSERT INTO robots VALUES (?, ?)", array(1, 'Astro Boy'));
  *</code>
  *
- * @param  string $sqlStatement
- * @param  array $bindParams
- * @param  array $bindTypes
- * @return boolean
+ * @param string $sqlStatement
+ * @param array $bindParams
+ * @param array $bindTypes
+ * @param boolean $flag
+ * @return boolean|Phalcon\Db\ResultInterface
  */
 PHP_METHOD(Phalcon_Db_Adapter_Pdo, execute){
 
-	zval *sql_statement, *bind_params = NULL, *bind_types = NULL, debug_message = {}, events_manager = {}, event_name = {}, status = {}, affected_rows = {};
-	zval pdo = {}, profiler = {}, statement = {}, new_statement = {};
+	zval *sql_statement, *bind_params = NULL, *bind_types = NULL, *flag = NULL, debug_message = {};
+	zval events_manager = {}, event_name = {}, status = {}, affected_rows = {};
+	zval statement = {}, new_statement = {};
 
-	phalcon_fetch_params(0, 1, 2, &sql_statement, &bind_params, &bind_types);
+	phalcon_fetch_params(0, 1, 3, &sql_statement, &bind_params, &bind_types, &flag);
+
+	if (!bind_params) {
+		bind_params = &PHALCON_GLOBAL(z_null);
+	}
+
+	if (!bind_types) {
+		bind_types = &PHALCON_GLOBAL(z_null);
+	}
+
+	if (!flag) {
+		flag = &PHALCON_GLOBAL(z_false);
+	}
 
 	if (unlikely(PHALCON_GLOBAL(debug).enable_debug)) {
 		PHALCON_CONCAT_SV(&debug_message, "SQL STATEMENT: ", sql_statement);
@@ -759,14 +740,6 @@ PHP_METHOD(Phalcon_Db_Adapter_Pdo, execute){
 		}
 	}
 
-	if (!bind_params) {
-		bind_params = &PHALCON_GLOBAL(z_null);
-	}
-
-	if (!bind_types) {
-		bind_types = &PHALCON_GLOBAL(z_null);
-	}
-
 	/**
 	 * Execute the beforeQuery event if a EventsManager is available
 	 */
@@ -777,41 +750,44 @@ PHP_METHOD(Phalcon_Db_Adapter_Pdo, execute){
 		phalcon_update_property_zval(getThis(), SL("_sqlBindTypes"), bind_types);
 
 		PHALCON_STR(&event_name, "db:beforeExecute");
+
 		PHALCON_CALL_METHOD(&status, &events_manager, "fire", &event_name, getThis(), bind_params);
 		if (PHALCON_IS_FALSE(&status)) {
 			RETURN_FALSE;
 		}
 	}
 
-	if (Z_TYPE_P(bind_params) == IS_ARRAY) {
-		PHALCON_CALL_METHOD(&statement, getThis(), "prepare", sql_statement);
-		if (Z_TYPE(statement) == IS_OBJECT) {
-			PHALCON_CALL_METHOD(&new_statement, getThis(), "executeprepared", &statement, bind_params, bind_types);
-			PHALCON_CALL_METHOD(&affected_rows, &new_statement, "rowcount");
-		} else {
-			ZVAL_LONG(&affected_rows, 0);
+	PHALCON_CALL_METHOD(&statement, getThis(), "prepare", sql_statement);
+	PHALCON_CALL_METHOD(&new_statement, getThis(), "executeprepared", &statement, bind_params, bind_types);
+
+	if (zend_is_true(flag)) {
+		/**
+		 * Execute the afterQuery event if a EventsManager is available
+		 */
+		if (likely(Z_TYPE(new_statement) == IS_OBJECT)) {
+			if (Z_TYPE(events_manager) == IS_OBJECT) {
+				PHALCON_STR(&event_name, "db:afterExecute");
+				PHALCON_CALL_METHOD(NULL, &events_manager, "fire", &event_name, getThis(), bind_params);
+			}
+
+			object_init_ex(return_value, phalcon_db_result_pdo_ce);
+			PHALCON_CALL_METHOD(NULL, return_value, "__construct", getThis(), &new_statement, sql_statement, bind_params, bind_types);
+			return;
 		}
-	} else {
-		phalcon_read_property(&pdo, getThis(), SL("_pdo"), PH_NOISY);
-		phalcon_read_property(&profiler, getThis(), SL("_profiler"), PH_NOISY);
-		if (Z_TYPE(profiler) == IS_OBJECT) {
-			PHALCON_CALL_METHOD(NULL, &profiler, "startprofile", sql_statement);
-			PHALCON_CALL_METHOD(&affected_rows, &pdo, "exec", sql_statement);
-			PHALCON_CALL_METHOD(NULL, &profiler, "stopprofile");
-		} else {
-			PHALCON_CALL_METHOD(&affected_rows, &pdo, "exec", sql_statement);
-		}
+
+		RETURN_CTOR(&new_statement);
 	}
 
-	/**
-	 * Execute the afterQuery event if a EventsManager is available
-	 */
-	if (Z_TYPE(affected_rows) == IS_LONG) {
-		phalcon_update_property_zval(getThis(), SL("_affectedRows"), &affected_rows);
-		if (Z_TYPE(events_manager) == IS_OBJECT) {
-			PHALCON_STR(&event_name, "db:afterExecute");
-			PHALCON_CALL_METHOD(NULL, &events_manager, "fire", &event_name, getThis(), bind_params);
-		}
+	if (likely(Z_TYPE(new_statement) == IS_OBJECT)) {
+		PHALCON_CALL_METHOD(&affected_rows, &new_statement, "rowcount");
+	} else {
+		ZVAL_LONG(&affected_rows, 0);
+	}
+
+	phalcon_update_property_zval(getThis(), SL("_affectedRows"), &affected_rows);
+	if (Z_TYPE(events_manager) == IS_OBJECT) {
+		PHALCON_STR(&event_name, "db:afterExecute");
+		PHALCON_CALL_METHOD(NULL, &events_manager, "fire", &event_name, getThis(), bind_params);
 	}
 
 	RETURN_TRUE;
