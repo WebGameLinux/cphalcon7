@@ -191,12 +191,12 @@ PHP_METHOD(Phalcon_Db_Adapter_Mongo, connect)
 	}
 
 	if (!phalcon_array_isset_fetch_str(&uri, &descriptor, SL("uri"))) {
-		PHALCON_THROW_EXCEPTION_STR(phalcon_db_exception_ce, "The parameter 'uri' is required");
+		PHALCON_THROW_EXCEPTION_STR(phalcon_db_exception_ce, "The index 'uri' is required in the descriptor array");
 		return;
 	}
 
 	if (phalcon_array_isset_fetch_str(&db, &descriptor, SL("db"))) {
-		PHALCON_THROW_EXCEPTION_STR(phalcon_db_exception_ce, "The parameter 'db' is required");
+		PHALCON_THROW_EXCEPTION_STR(phalcon_db_exception_ce, "The index 'db' is required in the descriptor array");
 		return;
 	}
 
